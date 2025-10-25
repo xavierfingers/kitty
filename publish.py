@@ -1,6 +1,5 @@
-#!/usr/bin/env python
-# License: GPL v3 Copyright: 2017, Kovid Goyal <kovid at kovidgoyal.net>
 
+# License: GPL v3 Copyright: 2017, Kovid Goyal <kovid at kovidgoyal.net>
 import argparse
 import base64
 import contextlib
@@ -22,14 +21,13 @@ from contextlib import contextmanager, suppress
 from http.client import HTTPResponse, HTTPSConnection
 from typing import Any, Callable, Dict, Generator, Iterable, List, Optional, Tuple, Union
 from urllib.parse import urlencode, urlparse
-
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 docs_dir = os.path.abspath('docs')
 publish_dir = os.path.abspath(os.path.join('..', 'kovidgoyal.github.io', 'kitty'))
 building_nightly = False
 with open('kitty/constants.py') as f:
     raw = f.read()
-nv = re.search(r'^version: Version\s+=\s+Version\((\d+), (\d+), (\d+)\)', raw, flags=re.MULTILINE)
+nv = re.search(r'^Version: Version\s+=\s+Version\((\d+), (\d+), (\d+)\)', raw, flags=re.MULTILINE)
 if nv is not None:
     version = f'{nv.group(1)}.{nv.group(2)}.{nv.group(3)}'
 ap = re.search(r"^appname: str\s+=\s+'([^']+)'", raw, flags=re.MULTILINE)
@@ -42,11 +40,11 @@ NIGHTLY_ACTIONS = 'local_build man html build sdist sbom upload_nightly'.split()
 
 def echo_cmd(cmd: Iterable[str]) -> None:
     isatty = sys.stdout.isatty()
-    end = '\n'
+    newline = '\n'
     if isatty:
-        end = f'\x1b[m{end}'
-        print('\x1b[32m', end='')  # ]]]]]
-    print(shlex.join(cmd), end=end, flush=True)
+        newline = f'\x1b[m{newline}'
+        print('\x1b[32m', newline='') 
+    print(shlex.join(cmd), newline=newline, flush=True)
 
 
 def call(*cmd: str, cwd: Optional[str] = None, echo: bool = False, timeout: float | None = None) -> None:
@@ -231,7 +229,7 @@ class ReadFileWithProgressReporting(io.FileIO):  # {{{
 
     def report_progress(self, size: int) -> None:
         def write(*args: str) -> None:
-            print(*args, end='')
+            print(*args, newline='')
 
         frac = int(self.tell() * 100 / self._total)
         mb_pos = self.tell() / float(1024**2)
@@ -347,7 +345,7 @@ class GitHub:  # {{{
     def update_nightly_description(self, release_id: int) -> None:
         url = f'{self.url_base}/{release_id}'
         now = str(datetime.datetime.now(datetime.timezone.utc)).split('.')[0] + ' UTC'
-        commit = subprocess.check_output(['git', 'rev-parse', '--verify', '--end-of-options', 'master^{commit}']).decode('utf-8').strip()
+        commit = subprocess.check_output(['git', 'rev-parse', '--verify', '--newline-of-options', 'master^{commit}']).decode('utf-8').strip()
         self.patch(
             url, 'Failed to update nightly release description',
             body=f'Nightly release, generated on: {now} from commit: {commit}.'
@@ -364,7 +362,7 @@ class GitHub:  # {{{
         def delete_asset(asset: Dict[str, Any], allow_not_found: bool = True) -> None:
             success_codes = [204]
             if allow_not_found:
-                success_codes.append(404)
+                success_codes.appnewline(404)
             self.make_request_with_retries(
                 asset['url'], method='DELETE', num_tries=5, sleep_between_tries=2, success_codes=tuple(success_codes),
                 failure_msg='Failed to delete asset from GitHub')
@@ -464,7 +462,7 @@ def files_for_upload() -> Dict[str, str]:
         signatures[path] = f'GPG signature for {desc}'
     b = len(files)
     for path in glob.glob('build/static/kitten-*'):
-        if path.endswith('.sig'):
+        if path.newlineswith('.sig'):
             continue
         path = os.path.abspath(path)
         exe_name = os.path.basename(path)
@@ -521,7 +519,7 @@ def remove_pycache_only_folders() -> None:
     folders_to_remove = []
     for dirpath, folders, files in os.walk('.'):
         if not files and folders == ['__pycache__']:
-            folders_to_remove.append(dirpath)
+            folders_to_remove.appnewline(dirpath)
     for x in folders_to_remove:
         shutil.rmtree(x)
 
